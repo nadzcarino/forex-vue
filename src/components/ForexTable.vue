@@ -1,16 +1,16 @@
 <template>
-  <div class="p-fluid p-formgrid p-grid">
+  <div class="p-fluid">
     <div class="p-field p-col-12 p-md-12" v-if="!loaded">
       <p>Please wait while fetching data ......</p>
       <ProgressSpinner />
     </div>
-    <div class="p-fluid p-formgrid p-grid" v-if="loaded">
+    <div class="p-fluid p-grid" v-if="loaded">
       <div class="p-field p-col-12 p-md-2">
         <label>Base</label>
         <Dropdown
           v-model="base"
           :options="baseArray"
-          placeholder="Select a Base"
+          placeholder="Select Base"
           :showClear="true"
           @change="filterData"
         ></Dropdown>
@@ -21,7 +21,7 @@
           v-model="target"
           :options="targetArray"
           :filter="true"
-          placeholder="Select a Target"
+          placeholder="Select Target"
           :showClear="true"
           @change="filterData"
         ></Dropdown>
@@ -31,7 +31,10 @@
         <InputNumber v-model="amount" showButtons :min="0" />
       </div>
       <div class="p-field p-col-12 p-md-12">
-        <DataTable :value="filteredData" :paginator="true" :rows="7" selectionMode="single">
+        <DataTable :value="filteredData" :paginator="true" :rows="6" selectionMode="single">
+          <template #empty>
+            <div class="no-record">NO RECORDS FOUND</div>
+          </template>
           <Column field="base" header="Base" :sortable="true">
             <template #body="slot">
               <img :src="`https://www.countryflags.io/${slot.data.base.substr(0, 2)}/flat/32.png`" />
@@ -49,7 +52,7 @@
             </template>
           </Column>
           <Column field="timestamp" header="Date and Time"></Column>
-          <Column field="rate" header="Exchange Rate" :sortable="true">
+          <Column field="rate" header="Exchange Rate">
             <template #body="slot">
               <span>{{ slot.data.rate.rate | currencyDecimal(amount) }}</span>
             </template>
@@ -85,19 +88,34 @@ export default {
 
   mounted() {
     this.loaded = false;
-    this.forexService
-      .getForexData()
-      .then(response => {
-        this.filteredData = this.forexData = this.createObject(
-          response.data.rates
-        );
-        this.loaded = true;
-        this.initArray();
-      })
-      .catch(error => console.log(error));
+    if (navigator.onLine) {
+      this.getData();
+    } else {
+      this.filteredData = this.forexData = JSON.parse(
+        localStorage.getItem("forexData")
+      );
+      this.initArray();
+      alert(
+        "You are either offline or connection to API is limited. We will display the offline data instead."
+      );
+      this.loaded = true;
+    }
   },
 
   methods: {
+    getData() {
+      this.forexService
+        .getForexData()
+        .then(response => {
+          this.filteredData = this.forexData = this.createObject(
+            response.data.rates
+          );
+          localStorage.setItem("forexData", JSON.stringify(this.forexData));
+          this.loaded = true;
+          this.initArray();
+        })
+        .catch(error => console.log(error));
+    },
     createObject(rates) {
       let array = [];
       Object.entries(rates).forEach(datum => {
@@ -152,5 +170,12 @@ export default {
 .p-field.p-col-12.p-md-2 {
   position: relative;
   left: 25%;
+}
+
+.no-record {
+  display: flex;
+  height: 200px;
+  justify-content: center;
+  align-items: center;
 }
 </style>
