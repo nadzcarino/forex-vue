@@ -65,6 +65,7 @@
 
 <script>
 import ForexService from "../services/ForexService";
+import { default_data } from "../assets/default_data.json";
 
 export default {
   name: "ForexTable",
@@ -88,12 +89,16 @@ export default {
 
   mounted() {
     this.loaded = false;
+    let data;
     if (navigator.onLine) {
       this.getData();
     } else {
-      this.filteredData = this.forexData = JSON.parse(
-        localStorage.getItem("forexData")
-      );
+      if (localStorage.getItem("forexData")) {
+        data = JSON.parse(localStorage.getItem("forexData"));
+      } else {
+        data = default_data;
+      }
+      this.filteredData = this.forexData = data;
       this.initArray();
       alert(
         "You are either offline or connection to API is limited. We will display the offline data instead."
