@@ -109,13 +109,24 @@ export default {
 
   methods: {
     getData() {
+      let data;
       this.forexService
         .getForexData()
         .then(response => {
-          this.filteredData = this.forexData = this.createObject(
-            response.data.rates
-          );
-          localStorage.setItem("forexData", JSON.stringify(this.forexData));
+          if (response.data.rates === null) {
+            if (localStorage.getItem("forexData")) {
+              data = JSON.parse(localStorage.getItem("forexData"));
+            } else {
+              data = default_data;
+            }
+          } else {
+            data = this.createObject(
+              response.data.rates
+            );
+            localStorage.setItem("forexData", JSON.stringify(data));
+          }
+          this.filteredData = this.forexData = data;
+
           this.loaded = true;
           this.initArray();
         })
